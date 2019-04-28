@@ -15,10 +15,23 @@ RUN jlink \
     --no-header-files \
     --no-man-pages \
     --output /tmp/jre-minimal \
-#    && du -h /tmp/jre-minimal
     && strip -p --strip-unneeded $(find /tmp/jre-minimal -name *.so)
 
-COPY . .
+COPY src src
+
+RUN javac -d mods --module-source-path src $(find src -name "*.java") && \
+    jar --create --file=mlib/org.astro@1.0.jar -C mods/org.astro . && \
+    jar --create --file=mlib/com.greetings.jar --main-class=com.greetings.Main -C mods/com.greetings .
+
+RUN jlink \
+    --add-modules java.base \
+    --verbose \
+    --strip-debug \
+    --compress 2 \
+    --no-header-files \
+    --no-man-pages \
+    --output /tmp/jre-minimal \
+    && strip -p --strip-unneeded $(find /tmp/jre-minimal -name *.so)
 
 FROM panga/alpine:3.7-glibc2.25
 
