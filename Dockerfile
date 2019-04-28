@@ -7,26 +7,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN adduser --system nonroot
 USER nonroot
-RUN mkdir -p /home/nonroot/build && cd /home/nonroot/build
+RUN mkdir -p /home/nonroot/build
+WORKDIR /home/nonroot/build
 
 COPY src src
 
-RUN mkdir -p /home/nonroot/build/target/classes /home/nonroot/build/target/lib && \
-    javac -d /home/nonroot/build/target/classes --module-source-path src $(find src -name "*.java") && \
-    jar --create --file=/home/nonroot/build/target/lib/org.astro@1.0.jar -C /home/nonroot/build/target/classes/org.astro . && \
-    jar --create --file=/home/nonroot/build/target/lib/com.greetings.jar --main-class=com.greetings.Main -C /home/nonroot/build/target/classes/com.greetings .
+RUN mkdir -p target/classes target/lib && \
+    javac -d target/classes --module-source-path src $(find src -name "*.java") && \
+    jar --create --file=target/lib/org.astro@1.0.jar -C target/classes/org.astro . && \
+    jar --create --file=target/lib/com.greetings.jar --main-class=com.greetings.Main -C target/classes/com.greetings .
 
 # This takes 13+ seconds on my machine; shame we can't reuse an existing stripped down one in some way?
 RUN time jlink \
     --add-modules com.greetings \
-    --module-path /home/nonroot/build/target/lib \
+    --module-path target/lib \
     --verbose \
     --strip-debug \
     --compress 2 \
     --no-header-files \
     --no-man-pages \
-    --output /home/nonroot/build/target/greetings-runtime \
-    && time strip -p --strip-unneeded $(find /home/nonroot/build/target/greetings-runtime -name *.so)
+    --output target/greetings-runtime \
+    && time strip -p --strip-unneeded $(find target/greetings-runtime -name *.so)
 
 FROM panga/alpine:3.7-glibc2.25
 
