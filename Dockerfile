@@ -9,8 +9,13 @@ USER nonroot
 RUN mkdir -p /home/nonroot/build
 WORKDIR /home/nonroot/build
 
+# These need to be updated as you depend on more base java modules
+# Run `jdeps -R -s --module-path . -m <your_root_module>` to find out what you
+# depend on
+ARG base_modules=java.base,java.sql
+
 RUN jlink \
-    --add-modules java.base,java.sql \
+    --add-modules $base_modules\
     --strip-debug \
     --compress 2 \
     --no-header-files \
@@ -24,13 +29,12 @@ RUN ./build.sh
 
 FROM panga/alpine:3.7-glibc2.25 as runner
 
+COPY --from=builder /home/nonroot/build/target/image /opt/jdk
+
 ENV LANG=C.UTF-8 \
     PATH=${PATH}:/opt/jdk/bin
 
-COPY --from=builder /home/nonroot/build/target/image /opt/jdk
-
 RUN adduser -S nonroot
-
 USER nonroot
 
 ARG JVM_OPTS
