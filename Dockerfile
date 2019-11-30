@@ -11,8 +11,12 @@ RUN mkdir -p /home/build/dev
 WORKDIR /home/build/dev
 
 # These need to be updated as you depend on more base java modules
-# Run `jdeps -R -s --module-path . -m <your_root_module>` to find out what you
-# depend on
+# Run:
+# ```bash
+# jdeps --module-path target/deps:target/lib -m <your_root_module> -R -s \
+#   | grep java | sed 's/^[^-]*-//' | cut -c 3- | sort -u`
+# ```
+# to find out what you depend on
 ARG base_modules=java.base,java.sql
 
 RUN jlink \
