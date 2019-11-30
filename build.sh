@@ -4,7 +4,8 @@ IFS=$'\n\t'
 
 function main {
     mkdir -p target/classes
-    javac -d target/classes --module-source-path src $(find src -name "*.java")
+    # shellcheck disable=SC2046
+    javac -d target/classes --module-source-path src $(find src -name '*.java')
 
     mkdir -p target/lib
     jar --create --file=target/lib/org.astro@1.0.jar -C target/classes/org.astro .
@@ -20,8 +21,6 @@ function main {
       --no-header-files \
       --no-man-pages \
       --output target/greetingsapp
-
-    strip -p --strip-unneeded $(find target/greetingsapp -name *.so)
 }
 
 main

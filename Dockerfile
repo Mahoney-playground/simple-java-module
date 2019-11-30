@@ -9,8 +9,8 @@ USER nonroot
 RUN mkdir -p /home/nonroot/build
 WORKDIR /home/nonroot/build
 
-COPY src src
 COPY build.sh build.sh
+COPY src src
 
 RUN ./build.sh
 
