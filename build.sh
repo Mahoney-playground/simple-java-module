@@ -5,7 +5,7 @@ IFS=$'\n\t'
 function main {
     mkdir -p target/classes
     # shellcheck disable=SC2046
-    javac -d target/classes --module-source-path src $(find src -name '*.java')
+    javac -d target/classes --module-source-path src --module-path target/deps $(find src -name '*.java')
 
     mkdir -p target/lib
     jar --create --file=target/lib/org.astro@1.0.jar -C target/classes/org.astro .
