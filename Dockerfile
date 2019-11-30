@@ -1,8 +1,4 @@
-FROM openjdk:13.0.3-jdk-slim-stretch as builder
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    binutils \
-    && rm -rf /var/lib/apt/lists/*
+FROM openjdk:13.0.1-jdk-slim as builder
 
 RUN adduser --system nonroot
 USER nonroot
@@ -14,14 +10,13 @@ COPY src src
 
 RUN ./build.sh
 
-FROM panga/alpine:3.7-glibc2.25
+FROM slimjre:13.0.1-java.sql
 
-COPY --from=builder /home/nonroot/build/target/greetingsapp /opt/greetingsapp
-
-ENV LANG=C.UTF-8 \
-    PATH=${PATH}:/opt/greetingsapp/bin
+USER nonroot
 
 ARG JVM_OPTS
 ENV JVM_OPTS=${JVM_OPTS}
 
-CMD java ${JVM_OPTS} --module com.greetings
+CMD java ${JVM_OPTS} --upgrade-module-path /opt/app/modules --module com.greetings
+
+COPY --from=builder /home/nonroot/build/target/lib/* /opt/app/modules/
