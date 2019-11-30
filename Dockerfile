@@ -26,12 +26,12 @@ COPY --from=jlinker /home/nonroot/build/target/image /opt/jdk
 
 RUN adduser -S nonroot
 
-FROM openjdk:13.0.1-jdk-slim as builder
-
-RUN adduser --system nonroot
 USER nonroot
-RUN mkdir -p /home/nonroot/build
-WORKDIR /home/nonroot/build
+
+ARG JVM_OPTS
+ENV JVM_OPTS=${JVM_OPTS}
+
+FROM jlinker
 
 COPY build.sh build.sh
 COPY src src
@@ -39,11 +39,6 @@ COPY src src
 RUN ./build.sh
 
 FROM runner
-
-USER nonroot
-
-ARG JVM_OPTS
-ENV JVM_OPTS=${JVM_OPTS}
 
 CMD java ${JVM_OPTS} --upgrade-module-path /opt/app/modules --module com.greetings
 
