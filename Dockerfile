@@ -10,13 +10,10 @@ USER build
 RUN mkdir -p /home/build/dev
 WORKDIR /home/build/dev
 
-# These need to be updated as you depend on more base java modules
-# Run:
-# ```bash
-# jdeps --module-path target/deps:target/lib -m <your_root_module> -R -s \
-#   | grep java | sed 's/^[^-]*-//' | cut -c 3- | sort -u`
-# ```
-# to find out what you depend on
+COPY checkModules.sh checkModules.sh
+COPY downloadDependencies.sh downloadDependencies.sh
+COPY build.sh build.sh
+
 ARG base_modules=java.base,java.sql
 
 RUN jlink \
@@ -28,14 +25,13 @@ RUN jlink \
     --output target/image
 
 # Separate dependency changes (infrequent) from src changes (frequent)
-COPY downloadDependencies.sh downloadDependencies.sh
 COPY dependencies.txt dependencies.txt
 RUN ./downloadDependencies.sh target/deps
 
-COPY build.sh build.sh
 COPY src src
-
 RUN ./build.sh
+
+RUN ./checkModules.sh com.greetings $base_modules
 
 FROM panga/alpine:3.7-glibc2.25 as runner
 
