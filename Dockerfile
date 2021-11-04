@@ -1,9 +1,9 @@
-FROM openjdk:13.0.1-jdk-slim as builder
+FROM eclipse-temurin:17_35-jdk-alpine as builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk add --update \
     binutils \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    bash
 
 RUN adduser --system build
 USER build
@@ -33,9 +33,7 @@ RUN ./build.sh
 
 RUN ./checkModules.sh com.greetings $base_modules
 
-FROM panga/alpine:3.7-glibc2.25 as runner
-
-COPY --from=builder /home/build/dev/target/image /opt/jdk
+FROM alpine:3.14.2 as runner
 
 ENV LANG=C.UTF-8 \
     PATH=${PATH}:/opt/jdk/bin
@@ -43,12 +41,16 @@ ENV LANG=C.UTF-8 \
 RUN adduser -S app
 USER app
 
+COPY --from=builder /home/build/dev/target/image /opt/jdk
+
 ARG JVM_OPTS
 ENV JVM_OPTS=${JVM_OPTS}
-
-CMD java ${JVM_OPTS} --upgrade-module-path /opt/app --module com.greetings
 
 # Separate dependency changes (infrequent) from src changes (frequent)
 COPY --from=builder /home/build/dev/target/deps/* /opt/app/
 
 COPY --from=builder /home/build/dev/target/lib/* /opt/app/
+
+RUN java -Xshare:dump --module-path /opt/app --module com.greetings
+
+CMD java ${JVM_OPTS} --module-path /opt/app --module com.greetings
