@@ -43,23 +43,34 @@ ENV LANG=C.UTF-8 \
 RUN adduser -S app
 USER app
 
+ARG deps_path=/opt/app/deps
+ARG lib_path=/opt/app/lib
+
+ARG module_path=$deps_path:$lib_path
+ENV module_path=${module_path}
+
+ARG module=com.greetings
+ENV module=${module}
+
+ARG shared_archive_file=/tmp/app-cds.jsa
+ENV shared_archive_file=${shared_archive_file}
+
 # Separate jdk changes (infrequent) from dependency changes (frequent)
 COPY --from=builder /home/build/dev/target/image /opt/jdk
 
 # Separate dependency changes (infrequent) from src changes (frequent)
-COPY --from=builder /home/build/dev/target/deps/* /opt/app/deps/
+COPY --from=builder /home/build/dev/target/deps/* $deps_path/
 
-COPY --from=builder /home/build/dev/target/lib/* /opt/app/lib/
+COPY --from=builder /home/build/dev/target/lib/* $lib_path/
 
 # Create a shared archive file to speed up cold start
 RUN java \
-      -XX:ArchiveClassesAtExit=/tmp/app-cds.jsa \
-      --module-path /opt/app/deps:/opt/app/lib \
-      --module com.greetings
+      -XX:ArchiveClassesAtExit=$shared_archive_file \
+      --module-path $module_path \
+      --module $module
 
-ENTRYPOINT [ "java", \
-  "-XX:SharedArchiveFile=/tmp/app-cds.jsa", \
-  "-Xshare:on", \
-  "--module-path", "/opt/app/deps:/opt/app/lib", \
-  "--module", "com.greetings" \
-]
+ENTRYPOINT java \
+  -XX:SharedArchiveFile=$shared_archive_file \
+  -Xshare:on \
+  --module-path $module_path \
+  --module $module
