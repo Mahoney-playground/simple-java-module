@@ -1,3 +1,5 @@
+ARG module=com.greetings
+
 FROM eclipse-temurin:17_35-jdk-alpine as builder
 
 RUN apk add --update \
@@ -33,12 +35,10 @@ RUN ./downloadDependencies.sh target/deps
 COPY src src
 RUN ./build.sh
 
-RUN ./checkModules.sh com.greetings $base_modules
+ARG module
+RUN ./checkModules.sh $module $base_modules
 
 FROM alpine:3.14.2 as runner
-
-ENV LANG=C.UTF-8 \
-    PATH=${PATH}:/opt/jdk/bin
 
 RUN adduser -S app
 USER app
@@ -49,14 +49,19 @@ ARG lib_path=/opt/app/lib
 ARG module_path=$deps_path:$lib_path
 ENV module_path=${module_path}
 
-ARG module=com.greetings
+ARG module
 ENV module=${module}
 
 ARG shared_archive_file=/tmp/app-cds.jsa
 ENV shared_archive_file=${shared_archive_file}
 
+ARG jdk_path=/opt/jdk
+
+ENV LANG=C.UTF-8 \
+    PATH=${PATH}:${jdk_path}/bin
+
 # Separate jdk changes (infrequent) from dependency changes (frequent)
-COPY --from=builder /home/build/dev/target/image /opt/jdk
+COPY --from=builder /home/build/dev/target/image $jdk_path
 
 # Separate dependency changes (infrequent) from src changes (frequent)
 COPY --from=builder /home/build/dev/target/deps/* $deps_path/
