@@ -44,4 +44,4 @@ java \
   --module-path "$module_path" \
   --module "$module"
 
-./runner.sh
+./runner.sh "$@"
