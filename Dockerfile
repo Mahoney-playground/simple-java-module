@@ -78,17 +78,6 @@ RUN java \
       --module-path "$module_path" \
       --module "$module"
 
-RUN echo "#!/bin/sh" > /tmp/runner.sh
-RUN echo exec java \
-\$JAVA_OPTS \
-\'-XX:SharedArchiveFile=$shared_archive_file\' \
--XX:+HeapDumpOnOutOfMemoryError \
--XX:HeapDumpPath=/tmp/jvm_heap_dump.hprof \
--XX:+ErrorFileToStderr \
--Xshare:on \
---module-path \'$module_path\' \
---module $module \"\$@\" >> /tmp/runner.sh
+COPY runner.sh /opt/app
 
-RUN chmod +x /tmp/runner.sh
-
-ENTRYPOINT [ "/tmp/runner.sh" ]
+ENTRYPOINT [ "/opt/app/runner.sh" ]

@@ -3,14 +3,14 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-module=com.greetings
+export module=com.greetings
 target_dir=target
 build_jvm_dir="$target_dir/jvm"
 build_deps_dir="$target_dir/deps"
 build_lib_dir="$target_dir/lib"
 base_modules=java.base,java.sql
-module_path="$build_deps_dir:$build_lib_dir"
-shared_archive_file=$target_dir/app-cds.jsa
+export module_path="$build_deps_dir:$build_lib_dir"
+export shared_archive_file=$target_dir/app-cds.jsa
 
 rm -rf "$target_dir"
 
@@ -37,12 +37,11 @@ fi
 
 ./checkModules.sh "$module" "$module_path" "$base_modules"
 
-"$build_jvm_dir/bin/java" \
-  -XX:ArchiveClassesAtExit=$shared_archive_file \
-  --module-path $module_path \
-  --module $module
+export PATH="$build_jvm_dir/bin:$PATH"
 
-"$build_jvm_dir/bin/java" \
-  -XX:SharedArchiveFile=$shared_archive_file \
-  --module-path $module_path \
-  --module $module
+java \
+  "-XX:ArchiveClassesAtExit=$shared_archive_file" \
+  --module-path "$module_path" \
+  --module "$module"
+
+./runner.sh
