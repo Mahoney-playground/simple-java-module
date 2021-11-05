@@ -1,7 +1,7 @@
 ARG module=com.greetings
 ARG build_dir=/home/build/dev
 ARG target_dir=$build_dir/target
-ARG build_jvm_dir="$target_dir/image"
+ARG build_jvm_dir="$target_dir/jvm"
 ARG build_deps_dir="$target_dir/deps"
 ARG build_lib_dir="$target_dir/lib"
 
@@ -68,7 +68,7 @@ ENV module="$module"
 ARG shared_archive_file=/tmp/app-cds.jsa
 ENV shared_archive_file="$shared_archive_file"
 
-ARG jvm_dir=/opt/jdk
+ARG jvm_dir=/opt/jvm
 
 ENV LANG=C.UTF-8 \
     PATH="${PATH}:${jvm_dir}/bin"
