@@ -23,29 +23,20 @@ USER build
 RUN mkdir -p "$build_dir"
 WORKDIR "$build_dir"
 
-COPY checkModules.sh .
-COPY downloadDependencies.sh .
-COPY build.sh .
-
 ARG base_modules=java.base,java.sql
-RUN jlink \
-    --add-modules "$base_modules" \
-    --strip-debug \
-    --compress 2 \
-    --no-header-files \
-    --no-man-pages \
-    --output "$build_jvm_dir"
-
-RUN "$build_jvm_dir/bin/java" -Xshare:dump
+COPY prepareSmallJvm.sh .
+RUN ./prepareSmallJvm.sh "$base_modules" "$build_jvm_dir"
 
 # Separate dependency changes (infrequent) from src changes (frequent)
+COPY downloadDependencies.sh .
 COPY dependencies.txt dependencies.txt
-
 RUN ./downloadDependencies.sh "$build_deps_dir"
 
 COPY src src
+COPY build.sh .
 RUN ./build.sh "$build_lib_dir" "$build_deps_dir"
 
+COPY checkModules.sh .
 RUN ./checkModules.sh "$module" "$build_deps_dir:$build_lib_dir" "$base_modules"
 
 FROM alpine:3.14.2 as runner
@@ -57,10 +48,10 @@ ARG build_lib_dir
 RUN adduser -S app
 USER app
 
-ARG deps_path=/opt/app/deps
-ARG lib_path=/opt/app/lib
+ARG deps_dir=/opt/app/deps
+ARG lib_dir=/opt/app/lib
 
-ARG module_path="$deps_path:$lib_path"
+ARG module_path="$deps_dir:$lib_dir"
 ENV module_path="$module_path"
 
 ENV module="$module"
@@ -77,9 +68,9 @@ ENV LANG=C.UTF-8 \
 COPY --from=builder "$build_jvm_dir" "$jvm_dir"
 
 # Separate dependency changes (infrequent) from src changes (frequent)
-COPY --from=builder "$build_deps_dir/*" "$deps_path/"
+COPY --from=builder "$build_deps_dir/*" "$deps_dir/"
 
-COPY --from=builder "$build_lib_dir/*" "$lib_path/"
+COPY --from=builder "$build_lib_dir/*" "$lib_dir/"
 
 # Create a shared archive file to speed up cold start
 RUN java \

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+IFS=$'\n\t'
+
 module=com.greetings
 target_dir=target
 build_jvm_dir="$target_dir/jvm"
@@ -25,15 +28,7 @@ if [[ $(javaVersion) != 17 ]]; then
   fi
 fi
 
-jlink \
-  --add-modules $base_modules \
-  --strip-debug \
-  --compress 2 \
-  --no-header-files \
-  --no-man-pages \
-  --output "$build_jvm_dir"
-
-"$build_jvm_dir/bin/java" -Xshare:dump
+./prepareSmallJvm.sh "$base_modules" "$build_jvm_dir"
 
 # Separate dependency changes (infrequent) from src changes (frequent)
 ./downloadDependencies.sh "$build_deps_dir"
