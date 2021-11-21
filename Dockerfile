@@ -1,5 +1,7 @@
 ARG module=com.greetings
-ARG build_dir=/home/build/dev
+ARG builder=build
+ARG builder_home=/home/$builder
+ARG build_dir=$builder_home/dev
 ARG target_dir=$build_dir/target
 ARG build_jvm_dir="$target_dir/jvm"
 ARG build_deps_dir="$target_dir/deps"
@@ -7,6 +9,8 @@ ARG build_lib_dir="$target_dir/lib"
 
 FROM eclipse-temurin:17_35-jdk-alpine as builder
 ARG module
+ARG builder
+ARG builder_home
 ARG build_dir
 ARG build_jvm_dir
 ARG build_lib_dir
@@ -17,9 +21,10 @@ RUN apk add --update \
     curl \
     bash
 
-RUN adduser --system build
-USER build
+RUN adduser --system $builder
+RUN mkdir -p "$builder_home" && chown $builder "$builder_home"
 
+USER $builder
 RUN mkdir -p "$build_dir"
 WORKDIR "$build_dir"
 
@@ -39,7 +44,7 @@ RUN ./build.sh "$build_lib_dir" "$build_deps_dir"
 COPY checkModules.sh .
 RUN ./checkModules.sh "$module" "$build_deps_dir:$build_lib_dir" "$base_modules"
 
-FROM alpine:3.14.2 as runner
+FROM alpine:3.14.2
 ARG module
 ARG build_jvm_dir
 ARG build_deps_dir
